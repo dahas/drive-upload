@@ -10,24 +10,27 @@ let options = {
     token: './token.json'
 };
 
-let allowedTypes = '';
-
-function setAllowed(allowed) {
-    allowedTypes = allowed;
+exports.setOptions = opts => {
+    options = {
+        ...options,
+        allowedTypes: opts.allowedTypes,
+        driveFolder: opts.driveFolder
+    }
 }
 
-function store(srcFile, destFile) {
+exports.store = (srcFile, destFile, callback) => {
     fs.readFile(options.credentials, (err, content) => {
         if (err) return console.log('Error loading client secret file:', err);
         authorize(JSON.parse(content), auth => {
             // console.log("auth", JSON.stringify(auth));
             FileType.fromFile(srcFile).then(fileData => {
-                if (allowedTypes && allowedTypes.split(',').map(o => o.trim()).indexOf(fileData.ext) < 0) {
+                if (options.allowedTypes && options.allowedTypes.split(',').map(o => o.trim()).indexOf(fileData.ext) < 0) {
                     console.log('File type not allowed: ', fileData.ext);
                 } else {
                     const drive = google.drive({ version: 'v3', auth });
                     var fileMetadata = {
-                        'name': destFile || srcFile
+                        'name': destFile ? destFile.split("/").pop() : srcFile.split("/").pop(),
+                        parents: options.driveFolder ? [options.driveFolder] : null
                     };
                     var media = {
                         mimeType: fileData.mime,
@@ -41,7 +44,11 @@ function store(srcFile, destFile) {
                         if (err) {
                             console.error(err);
                         } else {
-                            console.log('File Id: ', file.data.id);
+                            if (callback && typeof callback === 'function') {
+                                callback(file);
+                            } else {
+                                console.log('FileID:', file.data.id);
+                            }
                         }
                     });
                 }

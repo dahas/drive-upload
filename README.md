@@ -12,14 +12,33 @@
 
 When everything has gone right, you have now a "token.json" file in your root folder. Keep it there together with "credentials.json".
 
+### INSTALLATION
+
+```
+$ npm i drive-upload
+```
+
 ### Usage
 
 ```
 const driveUpload = require('drive-upload');
 
-// Optional:
-driveUpload.setAllowed('png,pdf,mp3'); // Comma-separated string with allowed types.
+/**
+ * Optional settings:
+ * @param Object
+ */
+driveUpload.setOptions({
+    allowedTypes: 'png,pdf,mp3,jpg',  // Comma-separated string with allowed types.
+    driveFolder: 'DRIVE_FOLDER_ID'  // Take the ID from the URL when inside the folder in Google Drive
+});
 
-// Finally:
-driveUpload.store('PATH_TO_FILE.EXT'); // Send a file to the cloud
+/**
+ * Finally send a file to the cloud:
+ * @param String - Local path to file
+ * @parma String - Rename file (Optional)
+ * @param Function - Callback on success (Optional)
+ */
+driveUpload.store('local/path/to/file.ext', 'rename.ext', file => {
+    console.log('FileID: ', file.data.id);
+});
 ```
