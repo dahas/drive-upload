@@ -1,0 +1,20 @@
+{
+  "name": "drive-upload",
+  "version": "1.0.0",
+  "description": "Upload files to Google Drive",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Upload",
+    "Google Drive",
+    "File upload"
+  ],
+  "author": "Martin J. Wolf",
+  "license": "ISC",
+  "dependencies": {
+    "file-type": "^16.0.0",
+    "googleapis": "^39.2.0"
+  }
+}
