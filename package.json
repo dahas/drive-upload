@@ -1,6 +1,6 @@
 {
   "name": "drive-upload",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Upload files to Google Drive",
   "main": "index.js",
   "scripts": {
