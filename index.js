@@ -7,14 +7,22 @@ const SCOPES = ['https://www.googleapis.com/auth/drive'];
 
 let options = {
     credentials: './credentials.json',
-    token: './token.json'
+    token: './token.json',
+    permissions: {
+        'type': 'anyone',
+        'role': 'reader'
+    }
 };
 
 exports.setOptions = opts => {
-    options = {
-        ...options,
-        allowedTypes: opts.allowedTypes,
-        driveFolder: opts.driveFolder
+    if (opts.allowedTypes) {
+        options['allowedTypes'] = opts.allowedTypes
+    }
+    if (opts.driveFolder) {
+        options['driveFolder'] = opts.driveFolder
+    }
+    if (opts.permissions) {
+        options['permissions'] = opts.permissions
     }
 }
 
@@ -22,37 +30,50 @@ exports.store = (srcFile, destFile, callback) => {
     fs.readFile(options.credentials, (err, content) => {
         if (err) return console.log('Error loading client secret file:', err);
         authorize(JSON.parse(content), auth => {
-            // console.log("auth", JSON.stringify(auth));
-            FileType.fromFile(srcFile).then(fileData => {
-                if (options.allowedTypes && options.allowedTypes.split(',').map(o => o.trim()).indexOf(fileData.ext) < 0) {
-                    console.log('File type not allowed: ', fileData.ext);
-                } else {
-                    const drive = google.drive({ version: 'v3', auth });
-                    var fileMetadata = {
-                        'name': destFile ? destFile.split("/").pop() : srcFile.split("/").pop(),
-                        parents: options.driveFolder ? [options.driveFolder] : null
-                    };
-                    var media = {
-                        mimeType: fileData.mime,
-                        body: fs.createReadStream(srcFile)
-                    };
-                    drive.files.create({
-                        resource: fileMetadata,
-                        media: media,
-                        fields: 'id'
-                    }, function (err, file) {
-                        if (err) {
-                            console.error(err);
-                        } else {
-                            if (callback && typeof callback === 'function') {
-                                callback(file);
+            FileType.fromFile(srcFile)
+                .then(fileData => {
+                    if (options.allowedTypes && options.allowedTypes.split(',').map(o => o.trim()).indexOf(fileData.ext) < 0) {
+                        console.log('File type not allowed: ', fileData.ext);
+                    } else {
+                        const drive = google.drive({ version: 'v3', auth });
+                        var fileMetadata = {
+                            'name': destFile ? destFile.split("/").pop() : srcFile.split("/").pop(),
+                            parents: options.driveFolder ? [options.driveFolder] : null
+                        };
+                        var media = {
+                            mimeType: fileData.mime,
+                            body: fs.createReadStream(srcFile)
+                        };
+                        drive.files.create({
+                            resource: fileMetadata,
+                            media: media,
+                            fields: 'id'
+                        }, function (err, file) {
+                            if (err) {
+                                console.error(err);
                             } else {
-                                console.log('FileID:', file.data.id);
+                                const trans = options.permissions.role === 'owner';
+                                drive.permissions.create({
+                                    fileId: file.data.id,
+                                    requestBody: options.permissions,
+                                    transferOwnership: trans
+                                });
+                                drive.files.get({
+                                    fileId: file.data.id,
+                                    fields: 'id,name,mimeType,parents,webContentLink,webViewLink,thumbnailLink,createdTime,size,imageMediaMetadata'
+                                }).then(response => {
+                                    response.data['webLink'] = response.data.webContentLink.replace("&export=download", "");
+                                    if (callback && typeof callback === 'function') {
+                                        callback(response.data);
+                                    } else {
+                                        console.log('fileData:', response.data);
+                                    }
+                                }).catch(err => console.log('Drive error:', err));
                             }
-                        }
-                    });
-                }
-            });
+                        });
+                    }
+                })
+                .catch(err => { });
         });
     });
 }

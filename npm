@@ -1,0 +1,7 @@
+Updating a package
+
+// Set new version number
+$ npm version x.x.x
+
+// Publish
+$ npm publish
