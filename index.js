@@ -21,7 +21,7 @@ exports.setOptions = opts => {
     if (opts.driveFolder) {
         options['driveFolder'] = opts.driveFolder
     }
-    if (opts.permissions) {
+    if (opts.permissions && Object.keys(opts.permissions).length > 0) {
         options['permissions'] = opts.permissions
     }
 }
